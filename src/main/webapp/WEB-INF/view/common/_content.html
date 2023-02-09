@@ -1,0 +1,132 @@
+@for(categorySite in categorySiteList){
+@if(isNotEmpty(categorySite.sites)){
+<h4 class="text-gray"><i class="linecons-tag" style="margin-right: 7px;" id="${categorySite.title}"></i>${categorySite.title}
+</h4>
+<div class="row">
+    @for(site in categorySite.sites){
+    <div class="col-sm-3">
+        <div class="xe-widget xe-conversations box2 label-info"
+             onclick="link('${site.sitUrl}','${site.uatUrl}','${site.prodUrl}')"
+             data-toggle="tooltip" data-placement="bottom" title="">
+            <div class="xe-comment-entry">
+                <a class="xe-user-img">
+                    @if(isNotEmpty(site.thumb)){
+                    <img data-original="/kaptcha/${site.thumb}" class="img-circle" width="40">
+                    @}
+                    @if(!isNotEmpty(site.thumb)){
+                    <img data-original="${ctxPath}/static/img/github.png" class="img-circle" width="40">
+                    @}
+                </a>
+                <div class="xe-comment">
+                    <a href="#" class="xe-user-name overflowClip_1">
+                        <strong>${site.title}</strong>
+                    </a>
+                    <p class="overflowClip_2">${site.description}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    @}
+</div>
+<br>
+@}
+@}
+@if(!isNotEmpty(categorySiteList)){
+<div style=" margin-top: 10%;margin-left: 35%;">
+    <h4 class="text-gray">暂未收入您输入的网站。</h4>
+    <h4 style="margin-top: 20px;" class="text-gray">如有需要可以联系838486863\@qq.com</h4>
+</div>
+@}
+<style>
+    /*.multi-app-model .layui-layer-title {*/
+    /*    display: none;*/
+    /*}*/
+
+    .multi-app-model-content {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-content: center;
+        align-items: center;
+        height: 250px;
+    }
+
+    .multi-app-model-content-child {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-content: center;
+        align-items: center;
+        width: 32%;
+    }
+
+    .multi-app-model-content-child img {
+        width: 40%;
+    }
+
+    .layui-layer-page .layui-layer-content {
+        overflow: hidden !important;
+    }
+
+    .multi-app-model-content-child-btn {
+        margin-top: 30px;
+
+        cursor: pointer;
+    }
+
+    .multi-app-model-content-child-btn a {
+        color: #ffffff;
+        background: #ff9e00;
+        border-radius: 30px;
+        padding: 6px 40px;
+    }
+
+    .multi-app-model-content-child-btn a:hover{
+        padding: 7px 42px;
+        background: #EC9404FF;
+        font-weight: 800;
+    }
+
+</style>
+<script type="text/javascript">
+    function link(sitUrl, uatUrl, prodUrl) {
+        if (uatUrl || prodUrl) {
+            var urlHtml = [
+                '   <div class="multi-app-model-content-child">' +
+                '       <img src="${ctxPath}/static/img/sit.png">' +
+                '       <div class="multi-app-model-content-child-btn"><a onclick="window.open(\'' + sitUrl + '\', \'_blank\')">打开SIT</a></div>' +
+                '   </div>'
+            ];
+            if (uatUrl) {
+                urlHtml.push(
+                    '   <div class="multi-app-model-content-child">' +
+                    '       <img src="${ctxPath}/static/img/uat.png">' +
+                    '       <div class="multi-app-model-content-child-btn"><a onclick="window.open(\'' + uatUrl + '\', \'_blank\')">打开UAT</a></div>' +
+                    '   </div>'
+                );
+            }
+            if (prodUrl) {
+                urlHtml.push(
+                    '   <div class="multi-app-model-content-child">' +
+                    '       <img src="${ctxPath}/static/img/prod.png">' +
+                    '       <div class="multi-app-model-content-child-btn"><a onclick="window.open(\'' + prodUrl + '\', \'_blank\')">打开PROD</a></div>' +
+                    '   </div>'
+                );
+            }
+            layer.open({
+                type: 1,
+                shadeClose:true,
+                scrollbar:false,
+                skin: 'multi-app-model', //加上边框
+                area: ['500px', '300px'], //宽高
+                title: ['系统存在多个环境，可按需点击对应访问按钮进行访问', 'font-size: 16px'],
+                content: '' +
+                    '<div class="multi-app-model-content">' + urlHtml.join('') + '</div>'
+            });
+        } else {
+            window.open(sitUrl, '_blank')
+        }
+    }
+</script>
