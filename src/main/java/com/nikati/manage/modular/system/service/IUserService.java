@@ -57,4 +57,5 @@ public interface IUserService extends IService<User> {
      */
     User getByAccount(String account);
 
+    User initUser(String accessToken);
 }

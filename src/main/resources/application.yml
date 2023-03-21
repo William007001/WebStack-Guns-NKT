@@ -43,4 +43,17 @@ spring:
     filters: wall,mergeStat
 
 
-
+platform:
+  zcloud:
+    sso:
+      client_id: jsxtx
+      # 智云单点页面地址
+      server_url: https://sso.runjian.com:32004/login
+      # 智云单点授权通过后回调业务系统后台接口地址
+      redirect_url: http://113.108.148.250:32188/authorize
+      # 智云单点成功重定向前端页面地址
+      success_url: http://113.108.148.250:32188/admin
+      # 智云单点获取用户基本信息接口地址
+      user_info_url: https://sso.runjian.com:31026/oauth/user_info
+      # 智云单点退出服务地址
+      logout_url: https://sso.runjian.com:31026/oauth/logout

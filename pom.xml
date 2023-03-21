@@ -189,6 +189,12 @@
 		<!--<groupId>org.springframework.boot</groupId> -->
 		<!--<artifactId>spring-boot-starter-data-redis</artifactId> -->
 		<!--</dependency> -->
+
+		<dependency>
+			<groupId>cn.hutool</groupId>
+			<artifactId>hutool-all</artifactId>
+			<version>4.1.2</version>
+		</dependency>
 	</dependencies>
 
 	<build>

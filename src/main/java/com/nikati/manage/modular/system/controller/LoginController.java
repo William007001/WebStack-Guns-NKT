@@ -15,9 +15,14 @@
  */
 package com.nikati.manage.modular.system.controller;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpResponse;
 import cn.stylefeng.roses.core.base.controller.BaseController;
 import cn.stylefeng.roses.core.util.ToolUtil;
 import com.google.code.kaptcha.Constants;
+import com.nikati.manage.GlobalConsts;
+import com.nikati.manage.ZCloudSSOKit;
 import com.nikati.manage.core.common.exception.InvalidKaptchaException;
 import com.nikati.manage.core.common.node.MenuNode;
 import com.nikati.manage.core.log.LogManager;
@@ -30,15 +35,24 @@ import com.nikati.manage.modular.system.model.User;
 import com.nikati.manage.modular.system.service.IMenuService;
 import com.nikati.manage.modular.system.service.IUserService;
 
+import net.sf.ehcache.Ehcache;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.cache.ehcache.EhCacheManager;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.ehcache.EhCacheCache;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static cn.stylefeng.roses.core.util.HttpContext.getIp;
 
@@ -56,6 +70,50 @@ public class LoginController extends BaseController {
 
     @Autowired
     private IUserService userService;
+
+    @Resource
+    private ZCloudSSOKit zCloudSSOKit;
+    @Resource
+    private EhCacheManager ehCacheManager;
+
+    /**
+     * 跳转到主页
+     */
+    @RequestMapping(value = "/authorize", method = RequestMethod.GET)
+    public String authorize(HttpServletRequest request, Model model) {
+        User user = userService.initUser(request.getParameter(GlobalConsts.ACCESS_TOKEN));
+        ehCacheManager.getCache("CONSTANT").put(user.getAccount(), request.getParameter(GlobalConsts.ACCESS_TOKEN));
+        //获取菜单列表
+//        if (StrUtil.isNotEmpty(user.getRoleid())) {
+//            List<Integer> roleList = Arrays.asList(user.getRoleid().split(",")).stream().map(item -> {
+//                return Integer.parseInt(item);
+//            }).collect(Collectors.toList());
+//            if (CollUtil.isNotEmpty(roleList)) {
+//                List<MenuNode> menus = menuService.getMenusByRoleIds(roleList);
+//                List<MenuNode> titles = MenuNode.buildTitle(menus);
+//                titles = ApiMenuFilter.build(titles);
+//
+//                model.addAttribute("titles", titles);
+//            }
+//        }
+
+        Subject currentUser = ShiroKit.getSubject();
+        UsernamePasswordToken token = new UsernamePasswordToken(user.getAccount(), user.getAccount().toCharArray());
+
+        token.setRememberMe(true);
+
+        currentUser.login(token);
+
+        ShiroUser shiroUser = ShiroKit.getUser();
+        super.getSession().setAttribute("shiroUser", shiroUser);
+        super.getSession().setAttribute("username", shiroUser.getAccount());
+
+        LogManager.me().executeLog(LogTaskFactory.loginLog(shiroUser.getId(), getIp()));
+
+        ShiroKit.getSession().setAttribute("sessionFlag", true);
+
+        return REDIRECT + "/admin";
+    }
 
     /**
      * 跳转到主页
@@ -88,11 +146,16 @@ public class LoginController extends BaseController {
      * 跳转到登录页面
      */
     @RequestMapping(value = "/login", method = RequestMethod.GET)
-    public String login() {
+    public String login(HttpServletResponse response) {
         if (ShiroKit.isAuthenticated() || ShiroKit.getUser() != null) {
             return REDIRECT + "/admin";
         } else {
-            return "/login.html";
+            try {
+                response.sendRedirect(zCloudSSOKit.getLoginUrl());
+            } catch (Exception e) {
+
+            }
+            return null;
         }
     }
 
@@ -142,9 +205,15 @@ public class LoginController extends BaseController {
      */
     @RequestMapping(value = "/logout", method = RequestMethod.GET)
     public String logOut() {
-        LogManager.me().executeLog(LogTaskFactory.exitLog(ShiroKit.getUser().getId(), getIp()));
-        ShiroKit.getSubject().logout();
-        deleteAllCookie();
-        return REDIRECT + "/login";
+        ShiroUser shiroUser =(ShiroUser) ShiroKit.getSubject().getPrincipal();
+        Object obj = ehCacheManager.getCache("CONSTANT").get(shiroUser.getAccount());
+        if (obj != null) {
+            String accessToke = obj.toString();
+            LogManager.me().executeLog(LogTaskFactory.exitLog(ShiroKit.getUser().getId(), getIp()));
+            ShiroKit.getSubject().logout();
+            deleteAllCookie();
+            zCloudSSOKit.logout(accessToke);
+        }
+        return REDIRECT + zCloudSSOKit.getLoginUrl();
     }
 }

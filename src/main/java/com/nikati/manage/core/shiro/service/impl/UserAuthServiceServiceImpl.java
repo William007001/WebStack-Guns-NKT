@@ -16,6 +16,7 @@
 package com.nikati.manage.core.shiro.service.impl;
 
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.util.StrUtil;
 import cn.stylefeng.roses.core.util.SpringContextHolder;
 
 import org.apache.shiro.authc.CredentialsException;
@@ -83,10 +84,11 @@ public class UserAuthServiceServiceImpl implements UserAuthService {
         Integer[] roleArray = Convert.toIntArray(user.getRoleid());
         List<Integer> roleList = new ArrayList<Integer>();
         List<String> roleNameList = new ArrayList<String>();
-        for (int roleId : roleArray) {
-            roleList.add(roleId);
-            roleNameList.add(ConstantFactory.me().getSingleRoleName(roleId));
-        }
+        if (roleArray != null)
+            for (int roleId : roleArray) {
+                roleList.add(roleId);
+                roleNameList.add(ConstantFactory.me().getSingleRoleName(roleId));
+            }
         shiroUser.setRoleList(roleList);
         shiroUser.setRoleNames(roleNameList);
 
@@ -109,8 +111,8 @@ public class UserAuthServiceServiceImpl implements UserAuthService {
 
         // 密码加盐处理
         String source = user.getSalt();
-        ByteSource credentialsSalt = new Md5Hash(source);
-        return new SimpleAuthenticationInfo(shiroUser, credentials, credentialsSalt, realmName);
+        ByteSource credentialsSalt = new Md5Hash(user.getSalt());
+        return new SimpleAuthenticationInfo(shiroUser, user.getPassword(), credentialsSalt, realmName);
     }
 
 }
